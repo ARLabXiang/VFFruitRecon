@@ -1,0 +1,7 @@
+unnecessary_stuff
+.vscode
+__pycache__
+model_checkpoints/FS/*
+model_checkpoints/GSAM/*
+model_checkpoints/SAM3D/*
+output

@@ -1,0 +1,9 @@
+[submodule "sam-3d-objects"]
+	path = sam-3d-objects
+	url = https://github.com/facebookresearch/sam-3d-objects
+[submodule "FoundationStereo"]
+	path = FoundationStereo
+	url = https://github.com/NVlabs/FoundationStereo.git
+[submodule "Grounded-Segment-Anything"]
+	path = Grounded-Segment-Anything
+	url = https://github.com/IDEA-Research/Grounded-Segment-Anything.git
