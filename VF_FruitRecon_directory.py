@@ -31,18 +31,21 @@ def clear_cache():
     gc.collect()
     process = psutil.Process(os.getpid())
     print("RAM (GB):", process.memory_info().rss / 1e9)
-
-run_name = "output"
-leftimages_dir = "sample_image/left"
-rightimages_dir = "sample_image/right"
+run_name = "hq_swint"
+leftimages_dir = "sample_image/l"
+rightimages_dir = "sample_image/r"
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ### GroundedSAM Configs
 text_prompt = "tomato"
 gsam_config = "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+#gsam_config = "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinB.py"
 grounded_checkpoint = "model_checkpoints/GSAM/groundingdino_swint_ogc.pth"
+#grounded_checkpoint = "model_checkpoints/GSAM/groundingdino_swinb_cogcoor.pth"
+
 sam_checkpoint = "model_checkpoints/GSAM/sam_vit_h_4b8939.pth"
-sam_hq = False
+sam_checkpoint = "model_checkpoints/GSAM/sam_hq_vit_h.pth"
+sam_hq = True
 sam_version = "vit_h"
 ### FS Configs
 fs_checkpoint = "model_checkpoints/FS/model_best_bp2.pth"
@@ -63,6 +66,7 @@ K = np.array([
 #### Begin VF-FruitRecon
 grounded_sam_model = load_gsam_model(gsam_config, grounded_checkpoint, None, device=device)
 if sam_hq:
+    print(sam_hq_model_registry)
     sam_predictor = SamPredictor(sam_hq_model_registry[sam_version](checkpoint=sam_checkpoint).to(device))
 else:
     sam_predictor = SamPredictor(sam_model_registry[sam_version](checkpoint=sam_checkpoint).to(device))
@@ -148,6 +152,7 @@ for left_img, right_img in zip(sorted(os.listdir(leftimages_dir)),
 clear_cache()
 del fs_model
 clear_cache()
+
 ## Begin of SAM-3D
 inference = Inference(sam3d_config_path, compile=False)
 directories = sorted(os.listdir(sam3d_data_directory))

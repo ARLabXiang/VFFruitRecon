@@ -144,7 +144,7 @@ def filter_larger_covering_masks(masks, containment_thresh=0.9, min_children=1):
     keep = [i for i, ch in children.items() if len(ch) >= min_children]
 
     return keep, children
-def set_seed(random_seed):
+def set_seed(random_seed, cudnn_sam3d = False):
   import torch,random
   np.random.seed(random_seed)
   random.seed(random_seed)
@@ -152,3 +152,6 @@ def set_seed(random_seed):
   torch.cuda.manual_seed_all(random_seed)
   torch.backends.cudnn.deterministic = True
   torch.backends.cudnn.benchmark = False
+#   if cudnn_sam3d:
+#     torch.backends.cudnn.deterministic = False
+#     torch.backends.cudnn.benchmark = False

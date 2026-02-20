@@ -5,3 +5,9 @@ model_checkpoints/FS/*
 model_checkpoints/GSAM/*
 model_checkpoints/SAM3D/*
 output
+sample_image/*
+vit_swinb
+vit_swint
+hq_swinb
+hq_swint
+!sample_image/gt_mask
