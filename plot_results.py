@@ -3,10 +3,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from sklearn.linear_model import RANSACRegressor, LinearRegression
 run_type = "vit_swint"
 pairable_df = pd.read_csv(f"{run_type}/real_tomato_matched_{run_type}_ms.csv")
 mask_size_thresholds = np.linspace(100, 15000, 200)
 sphere_thresholds = np.linspace(0.9, 4.0, 200)  # choose range & resolution
+scatter_thres = 10000
+scatter_E = 1.5
+scatter_RANSAC_THRESH = 2.5
+error_calibrate_m = 1.53    # from synthetic data
+error_calibrate_b = 1.41    # from synthetic data
 
 plt.hist(pairable_df["masksize"], bins=100)
 results = []
@@ -93,4 +99,99 @@ ax2 = ax1.twinx()
 ax2.plot(corr_sub["mask_thres"], corr_sub["n_samples"])
 ax2.set_ylabel("Num Samples")
 plt.title(f"Pearson r at Elongation threshold: {corr_sub['sphere_thres'].mean()}")
-plt.show()
+plt.savefig("corr.pdf")
+
+
+########
+print("Plotting scatter")
+fig, ax = plt.subplots(figsize=(5, 4.5))
+
+s_handles, l_handles = [], []
+def ransac_fit(x, y, residual_threshold=scatter_RANSAC_THRESH):
+    X = x.reshape(-1, 1)
+
+    ransac = RANSACRegressor(
+        estimator=LinearRegression(),
+        min_samples=100,
+        residual_threshold=residual_threshold,
+        random_state=0,
+        max_trials=1000
+    )
+    ransac.fit(X, y)
+
+    inliers = ransac.inlier_mask_
+    slope = ransac.estimator_.coef_[0]
+    intercept = ransac.estimator_.intercept_
+
+    return slope, intercept, inliers
+
+def plot_method(df, y_key, color, dark_color, label, s=12,marker='o'):
+    mask = (df["masksize"] > scatter_thres) & (df["mesh_PCAS_0"] < scatter_E)
+    df = df[mask]
+
+    x = df["MeasuredSize"].values * 0.0254 * 100 # inch to cm
+    y = df[y_key].values * 100
+
+    calibrated_y = (y-error_calibrate_b)/error_calibrate_m
+    AE = abs(calibrated_y-x)
+    APE = abs(calibrated_y-x)/x
+    SE = AE**2
+    print(f"{y_key} n: {len(df[y_key].values)}")
+    print(f"{y_key} MAE: {AE.mean():.2f} cm")
+    print(f"{y_key} MAPE: {APE.mean()*100:.2f} %")
+    print(f"{y_key} RMSE: {np.sqrt(SE.mean()):.2f} cm")
+    slope_r, intercept_r, inliers = ransac_fit(x, y)
+
+    x_in = x[inliers]
+    y_in = y[inliers]
+
+    # Pearson r on all points
+    r, _ = pearsonr(x, y)
+    r_f, _ = pearsonr(x_in, y_in)
+
+    x_line = np.linspace(x.min(), x.max(), 200)
+
+    s_handle = ax.scatter(
+        x_in, y_in, s=s, alpha=0.3, color=color, marker=marker,
+        label=f"{label} (n={len(x_in)}, $r$={r_f:.2f})"
+    )
+    ax.plot(
+        x_line, slope_r * x_line + intercept_r,
+        color="white", linewidth=3, alpha=0.6, zorder=4
+    )
+
+    l_ransac, = ax.plot(
+        x_line, slope_r * x_line + intercept_r,
+        color=dark_color, linewidth=1.5, zorder=5,
+        label=f"{label} Fit (m={slope_r:.2f}, b={intercept_r:.2f})"
+    )
+
+
+    s_handles.extend([s_handle])
+    l_handles.extend([l_ransac])
+t_df = pd.read_csv("vit_swint/real_tomato_matched_vit_swint_ms.csv")
+t_df = t_df.rename(columns={
+    "mesh_longest_diameter": "SAM3D_SwinT",
+    "RANSAC_PRadius": "RANSAC_SwinT",
+    "3D-LSeg": "LSeg3D_SwinT",
+    "2D-LSeg": "LSeg2D_SwinT",
+})
+#plot_method(b_df, "SAM3D_SwinB", "red", "darkred", "Swin-B", s=15,marker='D')
+plot_method(t_df, "SAM3D_SwinT", "green", "darkgreen", "Swin-T", s=15,marker='s')
+#plot_method(gt_df, "GT_diameter", "#69b3e7", "#1f77b4", "GT", s=15,marker='o')
+
+handles = s_handles + l_handles
+labels = [h.get_label() for h in handles]
+ax.legend(handles, labels, loc="upper left", ncol=1,fontsize=10)
+
+ax.set_xlabel("Measured Size (cm)",fontsize=14)
+ax.set_ylabel("Estimated Size (cm)",fontsize=14)
+ax.set_title(f"Greenhouse size estimate | Size > {scatter_thres}", x=0.45,fontsize=16)
+ax.grid(True)
+ax.tick_params(axis='both',labelsize=14)
+ax.set_xlim(2.5, 6.8)
+ax.set_ylim(5, 14.2)
+
+plt.tight_layout()
+plt.savefig("scatter.pdf")
+#plt.show()
