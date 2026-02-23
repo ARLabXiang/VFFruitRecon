@@ -73,7 +73,7 @@ def filter_masks_inside_ignore(masks, ignore_region):
         if np.any(fg & (~ignore_region)):
             filtered.append(m)
     return filtered
-run_type = "vit_swinb"
+run_type = "hq_swint"
 mask_group_1 = "sample_image/gt_mask/"
 mask_group_2 = f"{run_type}/sam3d_inputs"
 image_batch = [f for f in os.listdir(mask_group_1) if "rectified" in f and "tiff" not in f]
@@ -127,9 +127,9 @@ for img_label_dir, img_gsam_dir in tqdm(zip(groups_1, groups_2)):
     }
     pixel_rows.append(pixel_row)
 df = pd.DataFrame(pixel_rows)
-df.to_csv(f"pixel_iou_{run_type}.csv", index=False)
+df.to_csv(f"{run_type}/pixel_iou_{run_type}.csv", index=False)
 df = pd.DataFrame(object_rows)
-df.to_csv(f"sam_label_matches_{run_type}.csv", index=False) # None means False Positives count
+df.to_csv(f"{run_type}/sam_label_matches_{run_type}.csv", index=False) # None means False Positives count
 
 cwd = os.getcwd()
 print(image_batch)

@@ -10,7 +10,11 @@
 `plot_result.py` will generate the analysis in the paper from the output of `SizeEstimate.py`.
 
 ## Installation
-Follow installation in the three submodules
+Follow installation in the three submodules (SAM-3D, Grounded-SAM, and Foundation Stereo).
 
 ## Datasets
-Soon
+Greenhouse dataset (50 images): [Box](https://cornell.box.com/s/ky38g6ic3tu1jg2ua3k5xb9yr673uzol)
+
+The stereo images are under `sample_image/r` and `sample_image/l`. The `sample_image/gt_mask` folder is primarily for evaluation to match the predicted mask with annotated mask.
+
+Synthetic dataset (Soon)

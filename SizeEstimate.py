@@ -8,7 +8,7 @@ import os
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 PATH = os.getcwd()
-run_type = "vit_swint"
+run_type = "hq_swinb"
 mesh_folder_path_2 = f"{run_type}/sam3d_outputs"
 gt_directory = f"{run_type}/sam3d_inputs"
 sizes_df= pd.read_csv("row_1_2_size_matching.csv")

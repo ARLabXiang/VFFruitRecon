@@ -10,7 +10,7 @@ mask_size_thresholds = np.linspace(100, 15000, 200)
 sphere_thresholds = np.linspace(0.9, 4.0, 200)  # choose range & resolution
 scatter_thres = 10000
 scatter_E = 1.5
-scatter_RANSAC_THRESH = 2.5
+scatter_RANSAC_THRESH = 250     # not needed for when using the thresholds
 error_calibrate_m = 1.53    # from synthetic data
 error_calibrate_b = 1.41    # from synthetic data
 
@@ -99,7 +99,7 @@ ax2 = ax1.twinx()
 ax2.plot(corr_sub["mask_thres"], corr_sub["n_samples"])
 ax2.set_ylabel("Num Samples")
 plt.title(f"Pearson r at Elongation threshold: {corr_sub['sphere_thres'].mean()}")
-plt.savefig("corr.pdf")
+plt.savefig(f"{run_type}/corr.pdf")
 
 
 ########
@@ -125,14 +125,16 @@ def ransac_fit(x, y, residual_threshold=scatter_RANSAC_THRESH):
 
     return slope, intercept, inliers
 
-def plot_method(df, y_key, color, dark_color, label, s=12,marker='o'):
+def plot_method(df, y_key, color, dark_color, label, s=12,marker='o',use_calibrate=True):
     mask = (df["masksize"] > scatter_thres) & (df["mesh_PCAS_0"] < scatter_E)
     df = df[mask]
 
     x = df["MeasuredSize"].values * 0.0254 * 100 # inch to cm
     y = df[y_key].values * 100
-
-    calibrated_y = (y-error_calibrate_b)/error_calibrate_m
+    if (use_calibrate):
+        calibrated_y = (y-error_calibrate_b)/error_calibrate_m
+    else:
+        calibrated_y = y
     AE = abs(calibrated_y-x)
     APE = abs(calibrated_y-x)/x
     SE = AE**2
@@ -148,7 +150,7 @@ def plot_method(df, y_key, color, dark_color, label, s=12,marker='o'):
     # Pearson r on all points
     r, _ = pearsonr(x, y)
     r_f, _ = pearsonr(x_in, y_in)
-
+    print(f"{y_key} r: {r:.2f}, r_f: {r_f:.2f}")
     x_line = np.linspace(x.min(), x.max(), 200)
 
     s_handle = ax.scatter(
@@ -169,15 +171,18 @@ def plot_method(df, y_key, color, dark_color, label, s=12,marker='o'):
 
     s_handles.extend([s_handle])
     l_handles.extend([l_ransac])
-t_df = pd.read_csv("vit_swint/real_tomato_matched_vit_swint_ms.csv")
+t_df = pd.read_csv(f"{run_type}/real_tomato_matched_{run_type}_ms.csv")
+t_df["2D-LSeg"] *= 0.5/1729.537316070467 # 2D mask (metric) = 2D mask (pixel) * depth / focal length
 t_df = t_df.rename(columns={
-    "mesh_longest_diameter": "SAM3D_SwinT",
-    "RANSAC_PRadius": "RANSAC_SwinT",
-    "3D-LSeg": "LSeg3D_SwinT",
-    "2D-LSeg": "LSeg2D_SwinT",
+    "mesh_longest_diameter": "SAM3D",
+    "RANSAC_PRadius": "RANSAC",
+    "3D-LSeg": "LSeg3D",
+    "2D-LSeg": "LSeg2D",
 })
 #plot_method(b_df, "SAM3D_SwinB", "red", "darkred", "Swin-B", s=15,marker='D')
-plot_method(t_df, "SAM3D_SwinT", "green", "darkgreen", "Swin-T", s=15,marker='s')
+plot_method(t_df, "SAM3D", "green", "darkgreen", f"{run_type}", s=15,marker='s',use_calibrate=True)
+plot_method(t_df, "LSeg2D", "red", "darkred", f"{run_type}", s=15,marker='s',use_calibrate=False)
+
 #plot_method(gt_df, "GT_diameter", "#69b3e7", "#1f77b4", "GT", s=15,marker='o')
 
 handles = s_handles + l_handles
@@ -193,5 +198,5 @@ ax.set_xlim(2.5, 6.8)
 ax.set_ylim(5, 14.2)
 
 plt.tight_layout()
-plt.savefig("scatter.pdf")
+plt.savefig(f"{run_type}/scatter.pdf")
 #plt.show()
