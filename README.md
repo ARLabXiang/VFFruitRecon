@@ -1,4 +1,4 @@
-# VF-FruitRecon: 3D Fruit Reconstruction and Size Estimation with Foundation Models from Stereo Pair Images.
+# VF-FruitRecon: 3D Fruit Reconstruction and Size Estimation with Foundation Models from Stereo Pair Images. (UnderReview)
 
 ## Overview
 `VF_FruitRecon_directory.py` parses directory of left and right images through Grounded-SAM -> FoundationStereo -> SAM-3D to generate the mesh of individual fruits.
